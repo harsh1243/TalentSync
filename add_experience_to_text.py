@@ -37,4 +37,5 @@ df["resume"] = new_resume
 
 df.to_csv("resume_job_dataset_with_exp_text.csv", index=False)
 
-print("✅ Updated dataset saved as resume_job_dataset_with_exp_text.csv")
+print(" Updated dataset saved as resume_job_dataset_with_exp_text.csv")
+
