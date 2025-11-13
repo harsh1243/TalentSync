@@ -112,16 +112,16 @@ def load_models_and_scaler():
         "Ordinal": "best_ordinal.pkl"
     }
     for label, fname in mapping.items():
-        p = base / fname
+        p = base / "models" / fname
         if p.exists():
             try:
                 models[label] = joblib.load(str(p))
             except Exception:
                 pass
     scaler = None
-    if (base / "scaler.pkl").exists():
+    if (base / "models" / "scaler.pkl").exists():
         try:
-            scaler = joblib.load(str(base / "scaler.pkl"))
+            scaler = joblib.load(str(base / "models" / "scaler.pkl"))
         except Exception:
             scaler = None
     return models, scaler
@@ -310,8 +310,8 @@ def show_match_page():
                 
                
                 try:
-                    job_df = pd.read_csv("demo_jobs_50.csv")
-                    resume_df = pd.read_csv("demo_resumes_50.csv")
+                    job_df = pd.read_csv("dataset/demo_jobs_50.csv")
+                    resume_df = pd.read_csv("dataset/demo_resumes_50.csv")
                 except FileNotFoundError as e:
                     st.error(f"Demo file not found: {e.filename}. Please make sure 'demo_jobs_50.csv' and 'demo_resumes_50.csv' are in the same folder.")
                     st.stop()
@@ -343,3 +343,4 @@ if st.session_state.page == "home":
     show_home()
 else:
     show_match_page()
+
