@@ -8,3 +8,5 @@ spacy
 nltk
 sentence-transformers
 tqdm
+mord
+
