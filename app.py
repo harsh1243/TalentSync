@@ -92,10 +92,6 @@ div.stButton > button:has(span:contains('')) {
 """, unsafe_allow_html=True)
 
 
-
-
-
-
 if "page" not in st.session_state:
     st.session_state.page = "home"
 if "mode" not in st.session_state:
@@ -140,19 +136,27 @@ def pretty_display(df, text_col='job_description', score_col='score', top_k=None
         line-height:36px;
         border-radius:18px;
         background:#e6f4ea;
-        color:#0b3b18;
+        color:#0b6e4f;
         text-align:center;
         font-weight:700;
-        box-shadow: 0 1px 0 rgba(0,0,0,0.15) inset;
+        font-size:0.95rem;
     }
-    .result-row { padding: 10px 0; }
-    .result-text { font-size:16px; color: #014f86; } /* Changed color for better visibility on light bg */
-    .divider { border-bottom:1px solid rgba(10, 116, 210, 0.2); margin:8px 0; } /* Lightened blue divider */
+    .result-row {
+        padding: 8px 0;
+    }
+    .result-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .divider {
+        border-top: 1px solid #cce4f7;
+        margin: 6px 0;
+    }
     </style>
     """
     st.markdown(badge_css, unsafe_allow_html=True)
-    for i, row in df.reset_index(drop=True).iterrows():
-        text = str(row.get(text_col, ''))
+    for _, row in df.iterrows():
+        text = row.get(text_col, '')
         score = row.get(score_col, '')
         text_html = escape(text)
         col_left, col_right = st.columns([11,1])
@@ -162,185 +166,125 @@ def pretty_display(df, text_col='job_description', score_col='score', top_k=None
             st.markdown(f'<div style="display:flex;justify-content:flex-end;"><div class="score-badge">{int(score)}</div></div>', unsafe_allow_html=True)
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-def show_home():
 
+def _render_home_header():
+    """Render the title and subtitle for the home page."""
     st.markdown("<h1 style='text-align: center; color: #014f86;'>TalentSync</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #014f86; margin-bottom: 30px;'>Please select your role to begin</h3>", unsafe_allow_html=True)
+    st.markdown(
+        "<h3 style='text-align: center; color: #014f86; margin-bottom: 30px;'>Please select your role to begin</h3>",
+        unsafe_allow_html=True
+    )
 
 
+def _render_home_card_styles():
+    """Inject CSS styles for the role selection cards."""
     card_style = """
     <style>
     /* Target the native st.container() within the columns */
     [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] {
         background-color: #ffffff;
-        border: 2px solid #0a74d2; /* medium blue border */
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid #cce4f7;
         text-align: center;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        height: 300px; /* Set a consistent height */
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between; /* Pushes button to bottom */
+        transition: box-shadow 0.2s;
     }
-    
     [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(10, 116, 210, 0.2); /* blue shadow */
+        box-shadow: 0 8px 24px rgba(10,116,210,0.15);
     }
-
-    /* Corrected selectors for p and button */
-    [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] p {
-        font-size: 1rem;
-        color: #014f86 !important; /* Force color */
-        flex-grow: 1; /* Allows text to take up space */
-        padding-top: 1rem;
-        text-align: center; /* Ensure text is centered */
-    }
-
-    [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] .stButton button {
-        width: 100%; /* Make button fill card width */
-        font-size: 1.1rem;
-        padding: 0.75rem 1rem !important;
-        /* The global fix above should handle color, but we can be specific */
-    }
-    
-    /* --- THIS IS THE HYPER-SPECIFIC FIX --- 
-    It targets *only* text elements inside the home page buttons
-    */
-    [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] .stButton button span,
-    [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] .stButton button p,
-    [data-testid="stHorizontalBlock"] > div > [data-testid="stVerticalBlock"] > [data-testid="stContainer"] .stButton button div {
-        color: #ffffff !important;
-    }
-    /* --- END NEW FIX --- */
-    
     </style>
     """
     st.markdown(card_style, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2, gap="large")
 
-    with col1:
- 
-        with st.container():
-           
-           
-            st.header("👨‍💼 I am a Job Seeker")
-            st.markdown("<p>Find the perfect job by matching your resume to thousands of listings.</p>", unsafe_allow_html=True)
-            
-            # The button's click handler has the original logic
-            if st.button("Find a Job", key="jobseeker", use_container_width=True):
-                st.session_state.mode = "resume_to_jobs"
-                st.session_state.page = "match"
-                st.rerun() # Use rerun for a cleaner page transition
-            
-          
+def _render_recruiter_card():
+    """Render the recruiter role selection card."""
+    with st.container():
+        st.markdown("### 🏢 Recruiter")
+        st.markdown("Find the best resumes for a job description.")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("I'm a Recruiter", key="recruiter_btn", use_container_width=True):
+            st.session_state.mode = "job_to_resumes"
+            st.session_state.page = "match"
+            st.rerun()
 
+
+def _render_jobseeker_card():
+    """Render the job seeker role selection card."""
+    with st.container():
+        st.markdown("### 👤 Job Seeker")
+        st.markdown("Find the best job listings for your resume.")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("I'm a Job Seeker", key="jobseeker_btn", use_container_width=True):
+            st.session_state.mode = "resume_to_jobs"
+            st.session_state.page = "match"
+            st.rerun()
+
+
+def _render_home_role_cards():
+    """Render the two role selection cards side by side."""
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-       
-        with st.container():
-            
-            
-           
-            st.header("📈 I am a Recruiter")
-            st.markdown("<p>Discover top talent by matching your job description to qualified candidates.</p>", unsafe_allow_html=True)
-            
-            # The button's click handler has the original logic
-            if st.button("Find Talent", key="recruiter", use_container_width=True):
-                st.session_state.mode = "job_to_resumes"
-                st.session_state.page = "match"
-                st.rerun() # Use rerun for a cleaner page transition
-            
-          
+        card_col1, card_col2 = st.columns(2)
+        with card_col1:
+            _render_recruiter_card()
+        with card_col2:
+            _render_jobseeker_card()
+
+
+def show_home():
+    _render_home_header()
+    _render_home_card_styles()
+    _render_home_role_cards()
+
 
 def show_match_page():
-    st.header("Job Seeker" if st.session_state.mode == "resume_to_jobs" else "Recruiter")
-    st.write("Paste your text below and choose a model. Results show Top-K items with score on the right.")
-    model_names = ["Ridge", "SVR", "XGBoost", "Ordinal"]
+    mode = st.session_state.get("mode", "resume_to_jobs")
 
-  
-    if "model_choice" not in st.session_state:
-        st.session_state.model_choice = None
+    if st.button("← Back to Home"):
+        st.session_state.page = "home"
+        st.rerun()
 
-    cols = st.columns(len(model_names), gap="medium")
+    if mode == "resume_to_jobs":
+        st.markdown("<h2 style='color:#014f86;'>Job Seeker Mode</h2>", unsafe_allow_html=True)
+        st.markdown("Paste your resume below and we'll find the best matching jobs.")
+        resume_text = st.text_area("Your Resume", height=300, placeholder="Paste your resume text here...")
+        top_k = st.slider("Number of results", min_value=1, max_value=20, value=5)
 
-    for i, name in enumerate(model_names):
-      
-        label = f" {name}" if st.session_state.model_choice == name else name 
-
-        if cols[i].button(label, use_container_width=True):
-            st.session_state.model_choice = name
-
-   
-    model_choice = st.session_state.model_choice
-
-    
-    if model_choice:
-        st.success(f"Selected model: {model_choice}")
-    else:
-       
-        st.info("Please select a model from the options above.")
-
-    if st.session_state.mode == "resume_to_jobs":
-        anchor_text = st.text_area("Enter your resume", height=260, placeholder="Paste your full resume text here...")
-    else:
-        anchor_text = st.text_area("Enter the job description", height=260, placeholder="Paste the full job description text here...")
-    top_k = st.slider("Top K", 1, 50, 5)
-    col1, col2 = st.columns([1,1])
-    with col1:
-        if st.button("Rank", key="rank"):
-            if not anchor_text or not anchor_text.strip():
-                st.warning("Please enter text before ranking.")
-            elif not model_choice:
-                st.warning("Please select a model before ranking.") # Added check
+        if st.button("Find Matching Jobs"):
+            if not resume_text.strip():
+                st.warning("Please enter your resume text.")
             else:
-                importlib.reload(nb)
-                if model_choice in models:
-                    model = models[model_choice]
+                with st.spinner("Ranking jobs..."):
+                    results = nb.rank_jobs_for_resume(resume_text, models=models, scaler=scaler, top_k=top_k)
+                if results is not None and not results.empty:
+                    st.success(f"Top {min(top_k, len(results))} matching jobs:")
+                    pretty_display(results, text_col='job_description', score_col='score', top_k=top_k)
                 else:
-                    if models:
-                        first_label = list(models.keys())[0]
-                        model = models[first_label]
-                        st.info(f"Model '{model_choice}' not found; using '{first_label}' instead.")
-                    else:
-                        st.error("No model files found. Put your .pkl models (best_*.pkl) and scaler.pkl in this folder.")
-                        st.stop()
-                
-               
-                try:
-                    job_df = pd.read_csv("dataset/demo_jobs_50.csv")
-                    resume_df = pd.read_csv("dataset/demo_resumes_50.csv")
-                except FileNotFoundError as e:
-                    st.error(f"Demo file not found: {e.filename}. Please make sure 'demo_jobs_50.csv' and 'demo_resumes_50.csv' are in the same folder.")
-                    st.stop()
-                
-                try:
-                    with st.spinner("Preparing features and scoring..."):
-                        results = nb.rank_using_model(
-                            anchor_text=anchor_text,
-                            mode=st.session_state.mode,
-                            job_df=job_df,
-                            resume_df=resume_df,
-                            model=model,
-                            scaler=scaler,
-                            top_k=top_k
-                        )
-                    st.success("Ranking complete!")
-                    text_col = 'job_description' if st.session_state.mode == "resume_to_jobs" else 'resume'
-                    pretty_display(results, text_col=text_col, score_col='score', top_k=top_k)
-                except Exception as e:
-                    st.error("Error during ranking:")
-                    st.exception(e)
-    with col2:
-        if st.button("Back", key="back"):
-            st.session_state.page = "home"
-            st.rerun() # Added rerun for consistency
+                    st.info("No results found.")
 
-# Main app router
+    else:
+        st.markdown("<h2 style='color:#014f86;'>Recruiter Mode</h2>", unsafe_allow_html=True)
+        st.markdown("Paste a job description below and we'll find the best matching resumes.")
+        job_text = st.text_area("Job Description", height=300, placeholder="Paste the job description here...")
+        top_k = st.slider("Number of results", min_value=1, max_value=20, value=5)
+
+        if st.button("Find Matching Resumes"):
+            if not job_text.strip():
+                st.warning("Please enter a job description.")
+            else:
+                with st.spinner("Ranking resumes..."):
+                    results = nb.rank_resumes_for_job(job_text, models=models, scaler=scaler, top_k=top_k)
+                if results is not None and not results.empty:
+                    st.success(f"Top {min(top_k, len(results))} matching resumes:")
+                    pretty_display(results, text_col='resume', score_col='score', top_k=top_k)
+                else:
+                    st.info("No results found.")
+
+
+# --- Main router ---
 if st.session_state.page == "home":
     show_home()
-else:
+elif st.session_state.page == "match":
     show_match_page()
-
