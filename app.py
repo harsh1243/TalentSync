@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import importlib
 from pathlib import Path
 from html import escape
 import rank_engine_full as nb
@@ -62,14 +61,9 @@ div.stButton > button:hover {
     background-color: #0a74d2 !important; /* medium blue (old default) */
     transform: scale(1.03);
 }
-div.stButton > button:has(span:contains('')) {
-    background-color: #0a74d2 !important; /* medium blue (old default) */
-    color: #fff !important;
-}
-
 /* ---------- SLIDER ---------- */
 .stSlider > div > div > div {
-    background: #0a74d2 !imporant; /* medium blue */
+    background: #0a74d2 !important; /* medium blue */
 }
 
 /* ---------- SCORE BADGE ---------- */
@@ -101,6 +95,12 @@ if "page" not in st.session_state:
 if "mode" not in st.session_state:
     st.session_state.mode = "resume_to_jobs"
 
+# SECURITY: joblib.load() unpickles model artifacts, which can execute
+# arbitrary code. Only load models from the trusted, verified local
+# "models/" directory. Ensure these .pkl files are produced by this
+# project and are integrity-protected (e.g. checksum/signature) — never
+# load attacker-controlled or untrusted .pkl files. Consider migrating to
+# a safe serialization format (skops/ONNX) to eliminate pickle risk.
 @st.cache_resource
 def load_models_and_scaler():
     base = Path(".")
@@ -153,13 +153,17 @@ def pretty_display(df, text_col='job_description', score_col='score', top_k=None
     st.markdown(badge_css, unsafe_allow_html=True)
     for i, row in df.reset_index(drop=True).iterrows():
         text = str(row.get(text_col, ''))
-        score = row.get(score_col, '')
+        score_val = row.get(score_col, None)
+        try:
+            score_display = str(int(round(float(score_val)))) if pd.notna(score_val) else '-'
+        except (ValueError, TypeError):
+            score_display = '-'
         text_html = escape(text)
         col_left, col_right = st.columns([11,1])
         with col_left:
             st.markdown(f'<div class="result-row"><div class="result-text">{text_html}</div></div>', unsafe_allow_html=True)
         with col_right:
-            st.markdown(f'<div style="display:flex;justify-content:flex-end;"><div class="score-badge">{int(score)}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="display:flex;justify-content:flex-end;"><div class="score-badge">{score_display}</div></div>', unsafe_allow_html=True)
         st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 def show_home():
@@ -296,7 +300,6 @@ def show_match_page():
             elif not model_choice:
                 st.warning("Please select a model before ranking.") # Added check
             else:
-                importlib.reload(nb)
                 if model_choice in models:
                     model = models[model_choice]
                 else:
